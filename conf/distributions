@@ -1,0 +1,7 @@
+Origin: Saytrue
+Label: Saytrue
+Codename: stable
+Architectures: amd64 arm64
+Components: main
+Description: Saytrue - APT Repository
+SignWith: default
