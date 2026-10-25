@@ -1,7 +1,8 @@
 # ============================================================================
 # Saytrue APT Repository Update Workflow
 # ============================================================================
-# Triggered by repository_dispatch from saytrue linux-build.yml / linux-arm64-build.yml.
+# Triggered by repository_dispatch from saytrue linux-arm64-build.yml (the last Linux build, arch "both",
+# only for a published release) or by hand after publishing.
 # Downloads .deb from the GitHub Release in fidpa/saytrue-releases, imports into reprepro, deploys via GitHub Pages.
 #
 # Trigger: repository_dispatch (event_type: update-apt-repo)
@@ -10,8 +11,9 @@
 # Secrets:
 #   APT_GPG_PRIVATE_KEY - Armored GPG private key for signing
 #   APT_GPG_PASSPHRASE  - Passphrase for the GPG key (optional)
-#   SAYTRUE_REPO_TOKEN  - fine-grained PAT, Contents read/write on fidpa/saytrue-releases (the release is
-#                         still a draft when the Linux workflows dispatch; drafts need write access)
+#
+# The download uses the workflow's own token: it reads public releases only, so a draft release is never
+# imported (APT must not offer a version before it is published).
 #
 # Deploy Strategy:
 #   Uses actions/deploy-pages (artifact-based) instead of git push to gh-pages.
@@ -33,13 +35,13 @@ on:
         required: true
         type: string
       arch:
-        description: 'Architecture (amd64 or arm64)'
+        description: 'Architecture (both, or one of them; the repo is rebuilt with only what this run imports)'
         required: true
         type: choice
         options:
+          - both
           - amd64
           - arm64
-          - both
 
 permissions:
   contents: read
@@ -140,7 +142,7 @@ jobs:
 
       - name: Download .deb from GitHub Release
         env:
-          GH_TOKEN: ${{ secrets.SAYTRUE_REPO_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.params.outputs.version }}"
           ARCH="${{ steps.params.outputs.arch }}"
